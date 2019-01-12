@@ -1,5 +1,4 @@
 import Vue from 'nativescript-vue'
-import App from './components/App'
 import HomePage from './components/HomePage'
 import * as firebase from 'nativescript-plugin-firebase'
 import * as Toast from "nativescript-toast";

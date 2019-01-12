@@ -1,42 +1,36 @@
 <template>
-<Page>
-    <StackLayout>
-        <label v-for="(layout, index) in layouts" :text="layout + ' Layout'" :key="index" @tap="navigateTo(index)"/>
-    </StackLayout>
-</Page>
+    <Page>
+        <ActionBar title="NSVUE Components Showcase" />
+        <GridLayout rows="auto,*" columns="auto,*" backgroundColor="#22b960">
+            <label v-for="(mainPage, index) in mainPages" :text="mainPage" :key="index" @tap="navigateTo(mainPage)" />
+        </GridLayout>
+    </Page>
 </template>
 
 <script>
-import Vue from 'nativescript-vue'
-import Absolute from './Absolute'
+import MainPages from '~/pages';
 
 export default {
     data() {
         return {
-            layouts: ['Absolute','Dock','Flexbox','Grid','Wrap']
+            mainPages: ['LayoutList']
         }
     },
     methods: {
         navigateTo(index) {
-            this.$navigateTo(Absolute)
+            console.log(MainPages[index])
+            this.$navigateTo(MainPages[index]);
         }
     }
 }
 </script>
 
-<style>
-ActionBar {
-  background-color: #53ba82;
-  color: #ffffff;
-}
-label {
-    background-color:#436469;
-    color:white;
-    font-size:15;
-    height:20%;
-    width:100%;
-    padding: 20;
-    vertical-align: center;
-    text-align: center;
-}
+<style scoped>
+    label {
+        padding:20;
+        font-size:25;
+        background-color: #22b980;
+        color:white;
+    }
 </style>
+
