@@ -1,5 +1,8 @@
 <template>
 <Page>
+    <ActionBar>
+         <NavigationButton text="Home" android.systemIcon="ic_menu_back"/>
+    </ActionBar>
     <StackLayout orientation="vertical">
         <label v-for="(layout, index) in layouts" :text="layout + ' Layout'" :key="index" @tap="navigateTo(layout)"/>
     </StackLayout>
