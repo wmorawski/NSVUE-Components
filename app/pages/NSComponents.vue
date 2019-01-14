@@ -3,6 +3,17 @@
     <ActionBar title="All components"/>
     <ScrollView>
       <StackLayout>
+
+
+        <TabView :selectedIndex="tabIndex" @selectedIndexChange="tabViewChanged">
+          <TabViewItem title="Tab 1">
+            <Label text="Content for Tab 1"/>
+          </TabViewItem>
+          <TabViewItem title="Tab 2">
+            <Label text="Content for Tab 2"/>
+          </TabViewItem>
+        </TabView>
+
         <ActivityIndicator busy="true"/>
         <Button text="Button" @tap="updateProgress"/>
         <DatePicker v-model="selectedDate" @dateChange="dateChange()"/>
@@ -21,7 +32,7 @@
         />
         <SearchBar
           ref="searchBar"
-          hint="Search hint"
+          hint="Search hint!"
           :text="searchPhrase"
           @textChange="onTextChanged"
           @submit="onSubmit"
@@ -34,9 +45,35 @@
 
         <SegmentedBar :items="segments" v-model="segmentId"></SegmentedBar>
 
-        <Slider value="80" @valueChange="onValueChanged" />
+        <Slider value="80" @valueChange="onValueChanged"/>
 
         <Switch checked="true" @checkedChange="switched"/>
+
+
+        <TextField
+          :text="textFieldValue"
+          hint="Enter text..."
+          @textChange="log('text changed')"
+          @returnPress="log('pressed enter key')"
+          @focus="log('focused!')"
+          @blur="log('lost focus')"
+        />
+
+        <TextView editable="false">
+          <FormattedString>
+            <Span text="You can use text attributes such as "/>
+            <Span text="bold, " fontWeight="Bold"/>
+            <Span text="italic " fontStyle="Italic"/>
+            <Span text="and "/>
+            <Span text="underline." textDecoration="Underline"/>
+          </FormattedString>
+        </TextView>
+
+        <TimePicker hour="3" minute="30" @timeChange="log('time changed')"/>
+
+        <WebView src="https://google.com" @loadStarted="log('load started')" @loadFinished="log('load finished')" />
+
+
 
       </StackLayout>
     </ScrollView>
@@ -50,11 +87,13 @@ import { SegmentedBarItem } from "tns-core-modules/ui/segmented-bar";
 export default {
   data: () => {
     return {
+      textFieldValue: "",
+      tabIndex: 0,
       searchPhrase: "",
       selectedDate: "0000000",
       selectedIndex: 0,
       listOfItems: [
-        "abc",
+        "abc!!",
         "def",
         "ghi",
         "jkl",
@@ -110,10 +149,13 @@ export default {
       this.$refs.searchBar.nativeView.dismissSoftInput();
     },
     onValueChanged() {
-      this.log('slider value changed!')
+      this.log("slider value changed!");
     },
     switched() {
-      this.log('switch changed!');
+      this.log("switch changed!");
+    },
+    tabViewChanged() {
+      this.log("tab view changed!");
     }
   }
 };
@@ -121,7 +163,17 @@ export default {
 
 <style>
 ListView {
-  height: 100;
+  height: 150;
+}
+TimePicker {
+  height: 200;
+}
+TabView {
+  height: 200;
+  background-color: #eeeeff;
+}
+WebView {
+  height:300;
 }
 </style>
 

@@ -15,7 +15,7 @@
       />
     </ActionBar>
 
-    <GridLayout columns="150,auto" rows="150,auto"  backgroundColor="#22b980">
+    <WrapLayout columns="150,auto" rows="150,auto"  backgroundColor="#22b980">
 
       <label
         v-for="(mainPage, index) in mainPages"
@@ -24,7 +24,7 @@
         @tap="navigateTo(mainPage)"
       />
 
-    </GridLayout>
+    </WrapLayout>
   </Page>
 </template>
 
@@ -34,7 +34,7 @@ import MainPages from "~/pages";
 export default {
   data() {
     return {
-      mainPages: ["LayoutList", "NSComponents"]
+      mainPages: ["LayoutList", "NSComponents", "Dialogs"]
     };
   },
   methods: {
@@ -49,6 +49,7 @@ export default {
 label {
   padding: 20;
   font-size: 15;
+  width: 50%;
   background-color: #7dc2a7;
   color: white;
 }

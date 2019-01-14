@@ -1,7 +1,7 @@
 <template>
 <Page>
     <ActionBar>
-         <NavigationButton text="Home" android.systemIcon="ic_menu_back"/>
+         <NavigationButton text="Home" android.systemIcon="ic_menu_back" @tap="log('write navigation logic')"/>
     </ActionBar>
     <StackLayout orientation="vertical">
         <label v-for="(layout, index) in layouts" :text="layout + ' Layout'" :key="index" @tap="navigateTo(layout)"/>
@@ -13,6 +13,8 @@
 
 import Vue from 'nativescript-vue'
 import Layouts from '~/pages/layouts'
+import * as Toast from "nativescript-toast";
+
 
 export default {
     data() {
@@ -23,6 +25,9 @@ export default {
     methods: {
         navigateTo(index) {
             this.$navigateTo(Layouts[index]);
+        },
+        log(string) {
+            Toast.makeText(string).show();
         }
     }
 }
