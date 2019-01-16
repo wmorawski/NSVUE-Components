@@ -87,6 +87,31 @@ export default {
       Toast.makeText(string.toString()).show();
       console.log(string);
     }
+
+
+
+// log(string) {
+//       Toast.makeText(string.toString()).show();
+//       console.log(string);
+//     },
+//     fetchLocation() {
+//       console.log("lets get your location");
+//       geolocation
+//         .getCurrentLocation({
+//           desiredAccuracy: Accuracy.high,
+//           maximumAge: 1000,
+//           timeout: 20000
+//         })
+//         .then(res => {
+//           let lat = res.latitude;
+//           let lng = res.longitude;
+//           this.log("lat-> " + lat + "| long-> " + lng);
+//         })
+//         .catch(e => {
+//           console.log("oh frak, error", e);
+//         });
+//     },
+
   }
 };
 </script>
