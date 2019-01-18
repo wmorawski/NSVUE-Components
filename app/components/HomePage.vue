@@ -34,7 +34,7 @@ import MainPages from "~/pages";
 export default {
   data() {
     return {
-      mainPages: ["LayoutList", "NSComponents", "Dialogs", "Maps"]
+      mainPages: ["LayoutList", "NSComponents", "Dialogs", "Maps", "PlacesAPI"]
     };
   },
   methods: {

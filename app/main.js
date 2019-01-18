@@ -11,6 +11,7 @@ Vue.registerElement('MapView', ()=> require('nativescript-google-maps-sdk').MapV
 
 if(platform.isIOS) {
   GMSServices.provideAPIKey("AIzaSyAkfRgvDld05FQn1rp-ta0v0Xlfuo5CLn8");
+  PlacePicker.iosProvideAPIKey("AIzaSyAkfRgvDld05FQn1rp-ta0v0Xlfuo5CLn8");
 }
 
 function initializeFirebase() {

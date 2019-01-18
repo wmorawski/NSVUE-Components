@@ -18,6 +18,7 @@
     "nativescript-geolocation": "^4.3.1",
     "nativescript-google-maps-sdk": "^2.6.1",
     "nativescript-plugin-firebase": "^7.6.1",
+    "nativescript-plugin-gplaces": "^2.4.6",
     "nativescript-toast": "^1.4.6",
     "nativescript-vue": "^2.0.0",
     "tns-core-modules": "^5.0.2"

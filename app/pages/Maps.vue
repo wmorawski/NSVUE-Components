@@ -1,7 +1,7 @@
 <template>
-  <Page>
+  <Page actionBarHidden="false">
     <AbsoluteLayout>
-      <GridLayout top="0" left="0" height="100%" width="100%">
+      <GridLayout top="65" left="0" height="90%" width="100%">
         <MapView
           :latitude="origin.latitude"
           :longitude="origin.longitude"
@@ -9,12 +9,14 @@
           @mapReady="mapReady"
           @markerSelect="onMarkerSelect"
           @coordinateLongPress="pointSelected"
-          mapAnimationsEnabled="false"
+          mapAnimationsEnabled="true"
           :tilt="tilt"
           @cameraChanged="onCameraChanged"
         />
       </GridLayout>
       <Button @tap="getDirections" top="20" left="20">Get Directions</Button>
+      <button @tap="animateCamera" top="20" left="100">Fit route to view</button>
+      <button @tap="pickPlace" top="20" left="300">Pick Place</button>
     </AbsoluteLayout>
   </Page>
 </template>
@@ -28,7 +30,7 @@ import * as platform from "tns-core-modules/platform";
 import * as Toast from "nativescript-toast";
 const decodePolyline = require("decode-google-map-polyline");
 import * as http from "http";
-
+import * as GooglePlaces from 'nativescript-plugin-gplaces';
 
 export default {
   data() {
@@ -47,9 +49,11 @@ export default {
       origin: { latitude: 0, longitude: 0 },
       destination: { latitude: 0, longitude: 0 },
       APIKEY: "AIzaSyCeXREu81qPlViAQ0eiy2FrnfyutxxsTo8",
-      encodedPolyline : "",
-      routeCordinates : [],
+      encodedPolyline: "",
+      routeCordinates: [],
       polyline: new mapsModule.Polyline(),
+      positionOrigin: null,
+      positionDestination: null
     };
   },
   methods: {
@@ -86,7 +90,6 @@ export default {
         gMap.settings.myLocationButton = true;
       }
       this.addMarkerToMap();
-
     },
     addMarkerToMap() {
       this.secondMarker = new Marker();
@@ -99,17 +102,16 @@ export default {
     },
     pointSelected(args) {
       console.log("point selected");
-      this.marker.position = Position.positionFromLatLng(
-        args.position.latitude,
-        args.position.longitude
-      );
-      this.destination.latitude = args.position.latitude;
-      this.destination.longitude = args.position.longitude;
+      let lat = args.position.latitude;
+      let lng = args.position.longitude;
+      this.marker.position = Position.positionFromLatLng(lat, lng);
+      this.destination.latitude = lat;
+      this.destination.longitude = lng;
+      this.positionDestination = this.marker.position;
     },
     onCameraChanged(args) {
       var bounds = this.mapView.projection.visibleRegion.bounds;
       console.log(bounds.southwest.latitude);
-      bounds.southwest.latitude = 50;
       console.log(bounds.southwest.latitude);
     },
     log(string) {
@@ -124,8 +126,12 @@ export default {
           timeout: 20000
         })
         .then(res => {
-          this.origin.latitude = res.latitude;
-          this.origin.longitude = res.longitude;
+          let lat = res.latitude;
+          let lng = res.longitude;
+
+          this.origin.latitude = lat;
+          this.origin.longitude = lng;
+          this.positionOrigin = Position.positionFromLatLng(lat, lng);
         })
         .catch(e => {
           console.log("oh frak, error", e);
@@ -133,12 +139,17 @@ export default {
     },
     drawPolyline() {
       this.polyline = new mapsModule.Polyline();
-      this.routeCordinates.forEach(point => this.polyline.addPoint(mapsModule.Position.positionFromLatLng(point.lat, point.lng)));
+      this.routeCordinates.forEach(point =>
+        this.polyline.addPoint(
+          mapsModule.Position.positionFromLatLng(point.lat, point.lng)
+        )
+      );
       this.polyline.visible = true;
       this.polyline.width = 7;
       this.polyline.geodesic = false;
       // polyline.color = new Color("#DD00b3fd");
       this.mapView.addPolyline(this.polyline);
+      this.animateCamera();
     },
     getDirections() {
       let originCordinates = this.origin.latitude + "," + this.origin.longitude;
@@ -153,7 +164,7 @@ export default {
         this.APIKEY;
       http.getJSON(APIURL).then(
         result => {
-          console.log(result)
+          console.log(result);
           this.encodedPolyline = result.routes[0].overview_polyline.points;
           this.routeCordinates = decodePolyline(this.encodedPolyline);
           this.drawPolyline();
@@ -163,10 +174,41 @@ export default {
         }
       );
     },
-    iOS() {
- 
-    }
+    animateCamera() {
+      if (platform.isAndroid) {
+        let builder = new com.google.android.gms.maps.model.LatLngBounds.Builder();
+        let position1 = new com.google.android.gms.maps.model.LatLng(this.origin.latitude,this.origin.longitude);
+        let position2 = new com.google.android.gms.maps.model.LatLng(this.destination.latitude,this.destination.longitude);
+        builder.include(position1);
+        builder.include(position2);
+        let bounds = builder.build();
+        let padding = 200;
+        let cu = com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds(
+          bounds,
+          padding
+        );
+        this.mapView.gMap.animateCamera(cu,4000,null);
+      }
+      else {
+        let bounds = GMSCoordinateBounds.alloc().init();
+        let position1 = CLLocationCoordinate2DMake(this.origin.latitude,this.origin.longitude);
+        let position2 = CLLocationCoordinate2DMake(this.destination.latitude,this.destination.longitude);
+        bounds = bounds.includingCoordinate(position1);
+        bounds = bounds.includingCoordinate(position2);
+        let update = GMSCameraUpdate.fitBoundsWithPadding(bounds, 100);
+        this.mapView.gMap.animateWithCameraUpdate(update);
+      }
+
+      // var bounds = mapsModule.Bounds.fromCoordinates(this.positionOrigin, this.positionDestination);
+      // this.mapView.setViewport(bounds, 150);
+    },
+    pickPlace() {
+    GooglePlaces.init();
+    GooglePlaces.pickPlace()
+    .then(place => console.log(JSON.stringify(place)))
+    .catch(error => console.log(error));
   }
+    }
 };
 </script>
 
