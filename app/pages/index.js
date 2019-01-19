@@ -3,9 +3,10 @@ import NSComponents from './NSComponents'
 import Dialogs from './Dialogs'
 import Maps from './Maps';
 import PlacesAPI from './PlacesAPI';
+import LocationTrack from './LocationTrack';
 
 const MainPages = {
-   LayoutList, NSComponents, Dialogs, Maps, PlacesAPI
+   LayoutList, NSComponents, Dialogs, Maps, PlacesAPI, LocationTrack
 }
 
 export default MainPages;

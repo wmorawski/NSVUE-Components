@@ -14,9 +14,9 @@
           @cameraChanged="onCameraChanged"
         />
       </GridLayout>
-      <Button @tap="getDirections" top="20" left="20">Get Directions</Button>
-      <button @tap="animateCamera" top="20" left="100">Fit route to view</button>
-      <button @tap="pickPlace" top="20" left="300">Pick Place</button>
+      <Button @tap="getDirections" top="20" left="10">Get Directions</Button>
+      <button @tap="animateCamera" top="20" left="130">Fit route to view</button>
+      <button @tap="moveMarker" top="20" left="240">Move Marker</button>
     </AbsoluteLayout>
   </Page>
 </template>
@@ -30,7 +30,6 @@ import * as platform from "tns-core-modules/platform";
 import * as Toast from "nativescript-toast";
 const decodePolyline = require("decode-google-map-polyline");
 import * as http from "http";
-import * as GooglePlaces from 'nativescript-plugin-gplaces';
 
 export default {
   data() {
@@ -89,7 +88,6 @@ export default {
         gMap.myLocationEnabled = true;
         gMap.settings.myLocationButton = true;
       }
-      this.addMarkerToMap();
     },
     addMarkerToMap() {
       this.secondMarker = new Marker();
@@ -108,6 +106,38 @@ export default {
       this.destination.latitude = lat;
       this.destination.longitude = lng;
       this.positionDestination = this.marker.position;
+      this.reverseGeocode(lat, lng);
+    },
+    reverseGeocode(lat, lng) {
+      let APIKEY = "AIzaSyAPw4owHD6nyUOMGQDI1pzyaELFndKXUe8";
+      let GEOAPIURL =
+        "https://maps.googleapis.com/maps/api/geocode/json?latlng=" +
+        lat +
+        "," +
+        lng +
+        "&key=" +
+        APIKEY;
+      let PLACESAPIURL =
+        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=" +
+        lat +
+        "," +
+        lng +
+        "&rankby=distance&type=sublocality,&key=" +
+        APIKEY;
+
+      http
+        .getJSON(GEOAPIURL)
+        .then(
+          response => console.log("reverse geocode: " + response.results[0].formatted_address),
+          error => console.log(error)
+        );
+
+      http
+        .getJSON(PLACESAPIURL)
+        .then(
+          response => console.log("place: " + response.results[0].vicinity),
+          error => console.log(error)
+        );
     },
     onCameraChanged(args) {
       var bounds = this.mapView.projection.visibleRegion.bounds;
@@ -177,22 +207,33 @@ export default {
     animateCamera() {
       if (platform.isAndroid) {
         let builder = new com.google.android.gms.maps.model.LatLngBounds.Builder();
-        let position1 = new com.google.android.gms.maps.model.LatLng(this.origin.latitude,this.origin.longitude);
-        let position2 = new com.google.android.gms.maps.model.LatLng(this.destination.latitude,this.destination.longitude);
+        let position1 = new com.google.android.gms.maps.model.LatLng(
+          this.origin.latitude,
+          this.origin.longitude
+        );
+        let position2 = new com.google.android.gms.maps.model.LatLng(
+          this.destination.latitude,
+          this.destination.longitude
+        );
         builder.include(position1);
         builder.include(position2);
         let bounds = builder.build();
-        let padding = 200;
+        let padding = 100;
         let cu = com.google.android.gms.maps.CameraUpdateFactory.newLatLngBounds(
           bounds,
           padding
         );
-        this.mapView.gMap.animateCamera(cu,4000,null);
-      }
-      else {
+        this.mapView.gMap.animateCamera(cu, 1000, null);
+      } else {
         let bounds = GMSCoordinateBounds.alloc().init();
-        let position1 = CLLocationCoordinate2DMake(this.origin.latitude,this.origin.longitude);
-        let position2 = CLLocationCoordinate2DMake(this.destination.latitude,this.destination.longitude);
+        let position1 = CLLocationCoordinate2DMake(
+          this.origin.latitude,
+          this.origin.longitude
+        );
+        let position2 = CLLocationCoordinate2DMake(
+          this.destination.latitude,
+          this.destination.longitude
+        );
         bounds = bounds.includingCoordinate(position1);
         bounds = bounds.includingCoordinate(position2);
         let update = GMSCameraUpdate.fitBoundsWithPadding(bounds, 100);
@@ -202,13 +243,13 @@ export default {
       // var bounds = mapsModule.Bounds.fromCoordinates(this.positionOrigin, this.positionDestination);
       // this.mapView.setViewport(bounds, 150);
     },
-    pickPlace() {
-    GooglePlaces.init();
-    GooglePlaces.pickPlace()
-    .then(place => console.log(JSON.stringify(place)))
-    .catch(error => console.log(error));
-  }
+    moveMarker() {
+      this.destination.latitude+= 0.0001;
+      this.destination.longitude+= 0.0001;
+      this.marker.position = Position.positionFromLatLng(this.destination.latitude, this.destination.longitude);
+      this.marker.rotation= this.marker.rotation + 5;
     }
+  }
 };
 </script>
 

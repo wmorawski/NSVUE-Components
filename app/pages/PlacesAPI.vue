@@ -8,6 +8,7 @@
 
 <script>
 import * as GooglePlaces from "nativescript-plugin-gplaces";
+GooglePlaces.init();
 
 export default {
   methods: {
