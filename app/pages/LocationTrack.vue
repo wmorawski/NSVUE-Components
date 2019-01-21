@@ -3,12 +3,11 @@
     <StackLayout>
       <WrapLayout top="0" left="0" itemWidth="60">
         <Button @tap="getDirections">Get Directions</Button>
-        <Button @tap="clearRoute">Clear Route</Button>
+        <Button @tap="clearLines">Clear Lines</Button>
         <Button @tap="startJourney">Start Journey</Button>
         <button @tap="watchLocation">Watch Location</button>
         <button @tap="clearWatch">Clear watch</button>
         <button @tap="animateMarker">Animate Marker</button>
-        <button @tap="doNativeAction">Do native action</button>
       </WrapLayout>
       <AbsoluteLayout>
         <MapView
@@ -40,9 +39,12 @@ const imageSourceModule = require("tns-core-modules/image-source");
 import { error } from "tns-core-modules/trace/trace";
 import { TWEEN } from "nativescript-tweenjs";
 import * as geometery from "spherical";
-// import MapsHelper from "~/components/MapsHelper";
+import MapsHelper from "~/components/MapsHelper.js";
 
 export default {
+  mixins: [
+    MapsHelper
+  ],
   data() {
     return {
       mapView: null,
@@ -139,7 +141,6 @@ export default {
         this.animateMarker(lat, lng);
         return;
       }
-      console.log("journey started");
       /* update polyline logic */
       this.origin.latitude = lat;
       this.origin.longitude = lng;
@@ -173,30 +174,30 @@ export default {
       );
     },
     drawRoute() {
-      this.mapView.removeAllPolylines();
-      this.polyline = new mapsModule.Polyline();
-      this.mapView.addPolyline(this.polyline);
-      this.routeCordinates.forEach(point =>
-        this.polyline.addPoint(
-          Position.positionFromLatLng(point.lat, point.lng)
-        )
-      );
-      this.polyline.visible = true;
-      this.polyline.geodesic = true;
-      this.mapView.mainPolyline.setWidth(17);
-      // this.polyline.width = 5;
-      // polyline.color = new Color("#DD00b3fd");
+      // this.mapView.removeAllPolylines();
+      // this.polyline = new mapsModule.Polyline();
+      // this.mapView.addPolyline(this.polyline);
+      // this.routeCordinates.forEach(point =>
+      //   this.polyline.addPoint(
+      //     Position.positionFromLatLng(point.lat, point.lng)
+      //   )
+      // );
+      // this.polyline.visible = true;
+      // this.polyline.geodesic = true;
+      // this.polyline.width = 10;
+      // // polyline.color = new Color("#DD00b3fd");
  
-
-      let icon = imageSourceModule.fromResource("redcar");
-      let bitmapFactory = com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(
-        icon.android
-      );
-      let customCap = new com.google.android.gms.maps.model.CustomCap(
-        bitmapFactory,
-        10
-      );
-      this.mapView.mainPolyline.setStartCap(customCap);
+    
+      // let icon = imageSourceModule.fromResource("redcar");
+      // let bitmapFactory = com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(
+      //   icon.android
+      // );
+      // let customCap = new com.google.android.gms.maps.model.CustomCap(
+      //   bitmapFactory,
+      //   10
+      // );
+      // this.mapView.mainPolyline.setStartCap(customCap);
+      this.androidPolyline("redcar");
 
       if (!this.journeyStarted) this.animateCamera();
     },
@@ -268,31 +269,6 @@ export default {
         ]
       );
       this.marker.rotation = heading + 90;
-    },
-    getLatLng(lat, lng) {
-      return new com.google.android.gms.maps.model.LatLng(lat, lng);
-    },
-    doNativeAction() {
-      let pointsList = new java.util.ArrayList();
-      pointsList.add(
-        this.getLatLng(this.origin.latitude, this.origin.longitude)
-      );
-      pointsList.add(
-        this.getLatLng(this.destination.latitude, this.destination.longitude)
-      );
-      let polylineOptions = new com.google.android.gms.maps.model.PolylineOptions();
-      let line = this.mapView.gMap.addPolyline(polylineOptions);
-      line.setPoints(pointsList);
-
-      let icon = imageSourceModule.fromResource("redcar");
-      let bitmapFactory = com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(
-        icon.android
-      );
-      let customCap = new com.google.android.gms.maps.model.CustomCap(
-        bitmapFactory,
-        10
-      );
-      line.setEndCap(customCap);
     }
   }
 };
