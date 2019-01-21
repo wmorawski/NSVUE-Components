@@ -1,22 +1,29 @@
 <template>
   <Page>
-    <AbsoluteLayout>
-      <StackLayout top="0" left="0" orientation="horizontal">
+    <StackLayout>
+      <WrapLayout top="0" left="0" itemWidth="60">
         <Button @tap="getDirections">Get Directions</Button>
         <Button @tap="clearRoute">Clear Route</Button>
-      </StackLayout>
-      <MapView
-        top="65"
-        left="0"
-        height="90%"
-        width="100%"
-        :zoom="zoom"
-        :latitude="origin.latitude"
-        :longitude="origin.longitude"
-        @mapReady="mapReady"
-        @coordinateLongPress="pinDropped"
-      />
-    </AbsoluteLayout>
+        <Button @tap="startJourney">Start Journey</Button>
+        <button @tap="watchLocation">Watch Location</button>
+        <button @tap="clearWatch">Clear watch</button>
+        <button @tap="animateMarker">Animate Marker</button>
+        <button @tap="doNativeAction">Do native action</button>
+      </WrapLayout>
+      <AbsoluteLayout>
+        <MapView
+          top="0"
+          left="0"
+          height="100%"
+          width="100%"
+          :zoom="zoom"
+          :latitude="origin.latitude"
+          :longitude="origin.longitude"
+          @mapReady="mapReady"
+          @coordinateLongPress="pinDropped"
+        />
+      </AbsoluteLayout>
+    </StackLayout>
   </Page>
 </template>
 
@@ -29,7 +36,11 @@ import * as http from "http";
 import * as platform from "tns-core-modules/platform";
 import { Position, Marker } from "nativescript-google-maps-sdk";
 import { Image } from "ui/image";
-import { ImageSource } from "image-source";
+const imageSourceModule = require("tns-core-modules/image-source");
+import { error } from "tns-core-modules/trace/trace";
+import { TWEEN } from "nativescript-tweenjs";
+import * as geometery from "spherical";
+// import MapsHelper from "~/components/MapsHelper";
 
 export default {
   data() {
@@ -44,7 +55,10 @@ export default {
       routeCordinates: [],
       polyline: new mapsModule.Polyline(),
       northEastBounds: { lat: 0, lng: 0 },
-      southWestBounds: { lat: 0, lng: 0 }
+      southWestBounds: { lat: 0, lng: 0 },
+      journeyStarted: false,
+      watch: null,
+      originMarker: null
     };
   },
   methods: {
@@ -54,7 +68,7 @@ export default {
       this.marker.position = Position.positionFromLatLng(0, 0);
       this.marker.draggable = true;
 
-      this.marker.icon = 'redcar';
+      this.marker.icon = "redcar";
       this.mapView.addMarker(this.marker);
 
       let gMap = this.mapView.gMap;
@@ -86,17 +100,50 @@ export default {
 
           this.origin.latitude = lat;
           this.origin.longitude = lng;
+
+          this.originMarker = new Marker();
+          this.originMarker.position = Position.positionFromLatLng(lat, lng);
+          this.originMarker.draggable = true;
+          this.mapView.addMarker(this.originMarker);
         })
         .catch(e => {
           console.log("oh frak, error", e);
         });
     },
+    watchLocation() {
+      this.watch = geolocation.watchLocation(
+        success => {
+          console.log(success.latitude);
+          console.log(success.longitude);
+        },
+        error => console.log(error),
+        {
+          desiredAccuracy: Accuracy.high,
+          updateDistance: 1,
+          updateTime: 3000,
+          minimumUpdateTime: 3000
+        }
+      );
+    },
+    clearWatch() {
+      geolocation.clearWatch(this.watch);
+    },
     pinDropped(args) {
       let lat = args.position.latitude;
       let lng = args.position.longitude;
-      this.marker.position = Position.positionFromLatLng(lat, lng);
-      this.destination.latitude = lat;
-      this.destination.longitude = lng;
+      // this.marker.position = Position.positionFromLatLng(lat, lng);
+
+      if (!this.journeyStarted) {
+        this.destination.latitude = lat;
+        this.destination.longitude = lng;
+        this.animateMarker(lat, lng);
+        return;
+      }
+      console.log("journey started");
+      /* update polyline logic */
+      this.origin.latitude = lat;
+      this.origin.longitude = lng;
+      this.getDirections();
     },
     getDirections() {
       let originCordinates = this.origin.latitude + "," + this.origin.longitude;
@@ -126,18 +173,35 @@ export default {
       );
     },
     drawRoute() {
+      this.mapView.removeAllPolylines();
       this.polyline = new mapsModule.Polyline();
+      this.mapView.addPolyline(this.polyline);
       this.routeCordinates.forEach(point =>
         this.polyline.addPoint(
           Position.positionFromLatLng(point.lat, point.lng)
         )
       );
       this.polyline.visible = true;
-      this.polyline.width = 5;
-      this.polyline.geodesic = false;
+      this.polyline.geodesic = true;
+      this.mapView.mainPolyline.setWidth(17);
+      // this.polyline.width = 5;
       // polyline.color = new Color("#DD00b3fd");
-      this.mapView.addPolyline(this.polyline);
-      this.animateCamera();
+ 
+
+      let icon = imageSourceModule.fromResource("redcar");
+      let bitmapFactory = com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(
+        icon.android
+      );
+      let customCap = new com.google.android.gms.maps.model.CustomCap(
+        bitmapFactory,
+        10
+      );
+      this.mapView.mainPolyline.setStartCap(customCap);
+
+      if (!this.journeyStarted) this.animateCamera();
+    },
+    getCustomCap(source) {
+      return customCap;
     },
     clearRoute() {
       this.mapView.removeAllPolylines();
@@ -165,11 +229,11 @@ export default {
       } else {
         let bounds = GMSCoordinateBounds.alloc().init();
         let position1 = CLLocationCoordinate2DMake(
-        this.northEastBounds.lat,
+          this.northEastBounds.lat,
           this.northEastBounds.lng
         );
         let position2 = CLLocationCoordinate2DMake(
-            this.southWestBounds.lat,
+          this.southWestBounds.lat,
           this.southWestBounds.lng
         );
         bounds = bounds.includingCoordinate(position1);
@@ -177,7 +241,66 @@ export default {
         let update = GMSCameraUpdate.fitBoundsWithPadding(bounds, 100);
         this.mapView.gMap.animateWithCameraUpdate(update);
       }
+    },
+    startJourney() {
+      // this.marker.position = Position.positionFromLatLng(
+      //   this.origin.latitude,
+      //   this.origin.longitude
+      // );
+      this.journeyStarted = true;
+    },
+    animateMarker(lat, lng) {
+      var tween = new TWEEN.Tween(this.marker.position)
+        .to({ latitude: lat, longitude: lng }, 1000)
+        .easing(TWEEN.Easing.Linear.None)
+        .onUpdate(object => {
+          this.marker.position = Position.positionFromLatLng(
+            object.latitude,
+            object.longitude
+          );
+        })
+        .start();
+      let heading = geometery.heading(
+        [lat, lng],
+        [
+          this.originMarker.position.latitude,
+          this.originMarker.position.longitude
+        ]
+      );
+      this.marker.rotation = heading + 90;
+    },
+    getLatLng(lat, lng) {
+      return new com.google.android.gms.maps.model.LatLng(lat, lng);
+    },
+    doNativeAction() {
+      let pointsList = new java.util.ArrayList();
+      pointsList.add(
+        this.getLatLng(this.origin.latitude, this.origin.longitude)
+      );
+      pointsList.add(
+        this.getLatLng(this.destination.latitude, this.destination.longitude)
+      );
+      let polylineOptions = new com.google.android.gms.maps.model.PolylineOptions();
+      let line = this.mapView.gMap.addPolyline(polylineOptions);
+      line.setPoints(pointsList);
+
+      let icon = imageSourceModule.fromResource("redcar");
+      let bitmapFactory = com.google.android.gms.maps.model.BitmapDescriptorFactory.fromBitmap(
+        icon.android
+      );
+      let customCap = new com.google.android.gms.maps.model.CustomCap(
+        bitmapFactory,
+        10
+      );
+      line.setEndCap(customCap);
     }
   }
 };
 </script>
+
+<style <style scoped>
+button {
+  font-size: 10px;
+  padding: 3;
+}
+</style>
