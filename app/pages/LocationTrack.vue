@@ -244,10 +244,6 @@ export default {
       }
     },
     startJourney() {
-      // this.marker.position = Position.positionFromLatLng(
-      //   this.origin.latitude,
-      //   this.origin.longitude
-      // );
       this.journeyStarted = true;
     },
     animateMarker(lat, lng) {

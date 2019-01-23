@@ -6,7 +6,7 @@ import PlacesAPI from './PlacesAPI';
 import LocationTrack from './LocationTrack';
 
 const MainPages = {
-   LayoutList, NSComponents, Dialogs, Maps, PlacesAPI, LocationTrack
+   LayoutList, NSComponents, Dialogs, Maps, PlacesAPI, LocationTrack, RealTimeLocationTrack
 }
 
 export default MainPages;
