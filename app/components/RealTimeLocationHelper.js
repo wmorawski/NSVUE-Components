@@ -1,3 +1,27 @@
+import {
+    Position,
+    Marker
+} from "nativescript-google-maps-sdk";
+import * as geolocation from "nativescript-geolocation";
+import {
+    Accuracy
+} from "ui/enums";
+import * as mapsModule from "nativescript-google-maps-sdk";
+const decodePolyline = require("decode-google-map-polyline");
+import * as http from "http";
+import * as platform from "tns-core-modules/platform";
+import {
+    Image
+} from "ui/image";
+const imageSourceModule = require("tns-core-modules/image-source");
+import {
+    error
+} from "tns-core-modules/trace/trace";
+import {
+    TWEEN
+} from "nativescript-tweenjs";
+let Geometery = require("spherical");
+
 const DirectionsAPIHelper = {
     data() {
         return {
@@ -60,7 +84,7 @@ const DirectionsAPIHelper = {
             this.polyline.visible = true;
             this.polyline.geodesic = true;
             this.polyline.width = 10;
-            if (!journeyStarted)
+            if (!this.journeyStarted)
                 this.animateCamera();
         },
         animateCamera() {
@@ -118,7 +142,7 @@ const LocationHelper = {
                 let uiSettings = this.mapView.gMap.getUiSettings();
                 uiSettings.setMyLocationButtonEnabled(true);
                 /* enable my location button on android */
-                gMap.setMyLocationEnabled(true);
+                this.mapView.gMap.setMyLocationEnabled(true);
             } else {
                 /* enable my location button on iOS */
                 this.mapView.gMap.myLocationEnabled = true;
@@ -127,6 +151,7 @@ const LocationHelper = {
         },
         addMarkerToMap(marker, car) {
             car ? (marker.icon = "redcar") : console.log('Simple Marker');
+            marker.position = Position.positionFromLatLng(0, 0);
             this.mapView.addMarker(marker);
             marker.draggable = true;
         },
@@ -169,7 +194,6 @@ const LocationHelper = {
                     this.getDirections();
                     /* calculate and display arrival time and distance on screen */
                     this.getDistance();
-
                     /* detect when user reaches destination and cancel geolocation watch */
                 },
                 error => console.log(error), {
@@ -179,6 +203,9 @@ const LocationHelper = {
                     minimumUpdateTime: 3000
                 }
             );
+        },
+        clearWatch() {
+            geolocation.clearWatch(this.watch);
         }
     }
 }
@@ -187,38 +214,47 @@ const DistanceMatrixAPIHelper = {
     data() {
         return {
             DMAPIKEY: "AIzaSyAPw4owHD6nyUOMGQDI1pzyaELFndKXUe8",
-            distance: "",
-            duration: ""
-        }
-    },
-    computed: {
-        journeyDetails: () => {
-            let details = "Destination is " + this.distance < 1000 ?  this.distance + "Meters" : ((this.distance / 1000) + "KMs") + "away \n";
-            details += "Arrival Time is approximately: " + (this.duration / 60) + "minutes";
-            return details;
-        },
-        destinationReached: () => {
-            return geometry.distance(this.origin,this.destination) < 50 ? true : false;             
+            distance: 999,
+            duration: 999,
+            journeyDetails: "",
+            destinationReached: false
         }
     },
     methods: {
         getDistance() {
             let distanceMatrixAPIURL = "https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&";
-            distanceMatrixAPIURL += "origins=${this.origin.latitude},${this.origin.longitude}&destinations=${this.destination.latitude},${this.destination.longitude}&key=${this.DMAPIKEY}";
+            distanceMatrixAPIURL += `origins=${this.origin.latitude},${this.origin.longitude}&destinations=${this.destination.latitude},${this.destination.longitude}&key=${this.DMAPIKEY}`;
+            console.log(distanceMatrixAPIURL);
             http.getJSON(distanceMatrixAPIURL).then(
                 result => {
-                    this.distance = result.rows[0].elements.distance.value;
-                    this.duration = result.rows[0].elements.duration.value;
+                    this.distance = result.rows[0].elements[0].distance.text;
+                    this.duration = result.rows[0].elements[0].duration.text;
+                    this.updateJourneyDetails(result.rows[0].elements[0].distance.value);
                 },
                 error => {
                     console.log(error);
                 }
             );
 
+        },
+        updateJourneyDetails(distanceInMeters) {
+            if(distanceInMeters < 15) {
+                this.destinationReached = true;
+                this.endJourney();
+                console.log('journey ended');
+                return;
+            }
+
+            let details = "Destination is " + this.distance + " away \n";
+            details += "Arrival Time is approximately: " + this.duration;
+            this.journeyDetails = details;
         }
     }
 }
 
-export default DirectionsAPIHelper;
-export default LocationHelper;
-export default DistanceMatrixAPIHelper;
+const MapsHelper = {
+    DirectionsAPIHelper,
+    LocationHelper,
+    DistanceMatrixAPIHelper
+}
+export default MapsHelper;
