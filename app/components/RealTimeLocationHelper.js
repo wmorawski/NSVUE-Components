@@ -10,17 +10,10 @@ import * as mapsModule from "nativescript-google-maps-sdk";
 const decodePolyline = require("decode-google-map-polyline");
 import * as http from "http";
 import * as platform from "tns-core-modules/platform";
-import {
-    Image
-} from "ui/image";
-const imageSourceModule = require("tns-core-modules/image-source");
-import {
-    error
-} from "tns-core-modules/trace/trace";
+
 import {
     TWEEN
 } from "nativescript-tweenjs";
-let Geometery = require("spherical");
 
 const DirectionsAPIHelper = {
     data() {
@@ -135,18 +128,18 @@ const LocationHelper = {
         }
     },
     methods: {
-        turnOnMyLocation() {
+        turnOnMyLocation(value) {
             /* enable compass (enabled by default on android */
-            this.mapView.settings.compassEnabled = true;
+            this.mapView.settings.compassEnabled = value;
             if (platform.isAndroid) {
                 let uiSettings = this.mapView.gMap.getUiSettings();
-                uiSettings.setMyLocationButtonEnabled(true);
+                uiSettings.setMyLocationButtonEnabled(value);
                 /* enable my location button on android */
-                this.mapView.gMap.setMyLocationEnabled(true);
+                this.mapView.gMap.setMyLocationEnabled(value);
             } else {
                 /* enable my location button on iOS */
-                this.mapView.gMap.myLocationEnabled = true;
-                this.mapView.gMap.settings.myLocationButton = true;
+                this.mapView.gMap.myLocationEnabled = value;
+                this.mapView.gMap.settings.myLocationButton = value;
             }
         },
         addMarkerToMap(marker, car) {
@@ -156,8 +149,25 @@ const LocationHelper = {
             marker.draggable = true;
         },
         setMarker(marker, lat, lng, heading) {
-            marker.position = Position.positionFromLatLng(lat, lng);
-            heading ? (marker.rotation = heading) : console.log('No need to rotate marker');
+            // marker.position = Position.positionFromLatLng(lat, lng);
+
+            new TWEEN.Tween(marker.position)
+            .to({ latitude: lat, longitude: lng }, 1000)
+            .easing(TWEEN.Easing.Linear.None)
+            .onUpdate(object => {
+              marker.position = Position.positionFromLatLng(
+                object.latitude,
+                object.longitude
+              );
+            })
+            .start();
+            this.logData+= "\n " + heading;
+
+            // heading ? (marker.rotation = heading) : console.log('No need to rotate marker');
+            if(heading) {
+                this.logData+= "\n " + heading;
+                marker.rotation = heading;
+            }
         },
         fetchLocation() {
             geolocation
@@ -184,7 +194,7 @@ const LocationHelper = {
                     let lat = res.latitude;
                     let lng = res.longitude;
                     /* needs to check */
-                    let heading = res.heading;
+                    let heading = res.direction;
                     this.origin.latitude = lat;
                     this.origin.longitude = lng;
 

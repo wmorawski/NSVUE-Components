@@ -21,6 +21,9 @@
         />
         <TextView top="0" left="10" v-model="journeyDetails" v-if="journeyStarted"/>
         <TextView top="100" left="10" text="Destination Reached." v-if="destinationReached"/>
+        <ScrollView top="50" left="0" orientation="vertical">
+        <TextView class="log" v-model="logData" />
+    </ScrollView>
       </AbsoluteLayout>
     </StackLayout>
   </Page>
@@ -38,18 +41,21 @@ export default {
   data() {
     return {
       mapView: null,
-      zoom: 15
+      zoom: 18,
+      logData: "Console Log:"
     };
   },
   methods: {
     mapReady(args) {
       this.mapView = args.object;
-      this.turnOnMyLocation();
+      /* turn on my location button on map */
+      this.turnOnMyLocation(true);
+      /* add destination marker to map */
       this.addMarkerToMap(this.destinationMarker, false);
-      /* add car marker to map pointing to user location */
-
+      /* add car marker to map  */
       this.addMarkerToMap(this.myLocationMarker, true);
-
+      /* hide car marker until journey has started */
+      this.myLocationMarker.visible = false;
       /* set origin coordinates */
       this.fetchLocation();
     },
@@ -58,12 +64,14 @@ export default {
       let lng = args.position.longitude;
       this.destination.latitude = lat;
       this.destination.longitude = lng;
-      this.setMarker(this.destinationMarker, lat, lng);
+      this.setMarker(this.destinationMarker, lat, lng, false);
     },
     clearRoute() {
       this.mapView.removeAllPolylines();
     },
     startJourney() {
+      this.turnOnMyLocation(false);
+      this.myLocationMarker.visible = true;
       this.journeyStarted = true;
       this.destinationReached = false;
 
@@ -72,6 +80,8 @@ export default {
 
     },
     endJourney() {
+      this.turnOnMyLocation(true);
+      this.myLocationMarker.visible = false;
       this.clearWatch();
       this.clearRoute();
       this.journeyStarted = false;
@@ -88,5 +98,8 @@ button {
 TextView {
   background-color: white;
   color: black;
+}
+.log {
+  font-size: 9;
 }
 </style>
